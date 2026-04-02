@@ -156,16 +156,43 @@
     let salesData = JSON.parse(localStorage.getItem('trackerData'));
 
     if (!salesData) {
-        // Default empty data if nothing is in local storage
         salesData = {
             Arshad: [0,0,0,0,0,0,0,0,0,0,0,0],
             Shahnwaz: [0,0,0,0,0,0,0,0,0,0,0,0]
         };
     }
 
+    // 2. One-Time User Prompt & Auto-Month Setup
+    function setupDefaults() {
+        // Auto-select current month
+        const currentMonthIndex = new Date().getMonth();
+        document.getElementById('month').value = currentMonthIndex;
+
+        // Check for saved user name
+        let savedUser = localStorage.getItem('trackerUser');
+        
+        if (!savedUser) {
+            // Ask one time if no user is saved
+            let input = prompt("Welcome to the Sales Tracker!\nPlease enter your name (Arshad or Shahnwaz):", "Arshad");
+            
+            // Basic check to see who they typed
+            if (input && input.trim().toLowerCase() === "shahnwaz") {
+                savedUser = "Shahnwaz";
+            } else {
+                savedUser = "Arshad"; // Default fallback
+            }
+            
+            // Save it so we never ask again
+            localStorage.setItem('trackerUser', savedUser);
+        }
+
+        // Set the dropdown to the remembered user
+        document.getElementById('user').value = savedUser;
+    }
+
     let chartInstance = null;
 
-    // 2. Handle Form Submission (Add/Edit)
+    // 3. Handle Form Submission (Add/Edit)
     document.getElementById('salesForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -182,9 +209,12 @@
         // Refresh UI
         updateUI();
         document.getElementById('amount').value = ''; // clear input
+        
+        // Return focus to the amount box for fast entry
+        document.getElementById('amount').focus(); 
     });
 
-    // 3. Render Dashboard Chart
+    // 4. Render Dashboard Chart
     function renderChart() {
         const ctx = document.getElementById('salesChart').getContext('2d');
         
@@ -222,7 +252,7 @@
         });
     }
 
-    // 4. Render Data Table
+    // 5. Render Data Table
     function renderTable() {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = ''; // clear current
@@ -238,13 +268,14 @@
         }
     }
 
-    // 5. Update UI Wrapper
+    // 6. Update UI Wrapper
     function updateUI() {
         renderChart();
         renderTable();
     }
 
-    // Initial load
+    // Run on initial load
+    setupDefaults();
     updateUI();
 
 </script>
