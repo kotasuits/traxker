@@ -6,8 +6,8 @@
     <title>Sales Tracker | Arshad & Shahnwaz</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #4f46e5; --bg: #f3f4f6; --card-bg: #ffffff; --text: #1f2937; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        :root { --primary: #4f46e5; --secondary: #10b981; --bg: #f3f4f6; --card-bg: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
         .container { max-width: 1100px; margin: 0 auto; }
         .grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
@@ -15,35 +15,41 @@
         form { display: flex; flex-direction: column; gap: 10px; }
         input, select, button { padding: 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
         button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-edit { background: #f59e0b; padding: 5px 10px; font-size: 12px; margin-right: 5px; }
-        .btn-del { background: #ef4444; padding: 5px 10px; font-size: 12px; }
+        .btn-edit { background: #f59e0b; padding: 5px 10px; font-size: 12px; border:none; color:white; border-radius:3px; cursor:pointer;}
+        .btn-del { background: #ef4444; padding: 5px 10px; font-size: 12px; border:none; color:white; border-radius:3px; cursor:pointer;}
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
         th { background: var(--primary); color: white; }
-        .status { font-size: 0.85em; margin-bottom: 10px; font-weight: bold; }
+        .filter-bar { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .status { font-size: 0.85em; margin-bottom: 10px; font-weight: bold; text-align: center; color: #4b5563; }
         @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 style="text-align:center; color:var(--primary)">Sales Order Manager</h1>
-    <div id="syncStatus" class="status" style="text-align: center;">Initializing...</div>
+    <h1 style="text-align:center; color:var(--primary)">Personalized Sales Manager</h1>
+    <div id="syncStatus" class="status">Connecting to Cloud...</div>
 
     <div class="grid">
         <div class="card">
-            <h2 id="formTitle">Add New Order</h2>
+            <h2 id="formTitle">Create Order</h2>
             <form id="salesForm">
                 <input type="hidden" id="editId" value="">
-                <label>Salesperson:</label>
-                <select id="user"><option value="Arshad">Arshad</option><option value="Shahnwaz">Shahnwaz</option></select>
+                <label>Select User:</label>
+                <select id="user">
+                    <option value="Arshad">Arshad</option>
+                    <option value="Shahnwaz">Shahnwaz</option>
+                </select>
                 
                 <label>Month:</label>
-                <select id="month"></select> <label>Amount:</label>
-                <input type="number" id="amount" required placeholder="Enter Amount">
+                <select id="month"></select>
+
+                <label>Amount:</label>
+                <input type="number" id="amount" required placeholder="0.00">
                 
                 <button type="submit" id="saveBtn">Save Order</button>
-                <button type="button" id="cancelBtn" style="background:#6b7280; display:none;">Cancel Edit</button>
+                <button type="button" id="cancelBtn" style="background:#6b7280; display:none; margin-top:5px;">Cancel Edit</button>
             </form>
         </div>
 
@@ -53,11 +59,18 @@
         </div>
 
         <div class="card full-width">
-            <h2>Recent Orders</h2>
+            <div class="filter-bar">
+                <strong>View Orders For:</strong>
+                <select id="viewFilter" onchange="updateUI()">
+                    <option value="All">All Users</option>
+                    <option value="Arshad">Arshad Only</option>
+                    <option value="Shahnwaz">Shahnwaz Only</option>
+                </select>
+            </div>
             <table id="orderTable">
                 <thead>
                     <tr>
-                        <th>Order ID</th>
+                        <th>Order Number</th>
                         <th>User</th>
                         <th>Month</th>
                         <th>Amount</th>
@@ -73,52 +86,54 @@
 <script>
     const G_URL = "https://script.google.com/macros/s/AKfycbwHpKRlzGorZnAyY3fQ1IJvjQY1zn-OuAVrpteGtBmFUtJvlDflZQTAQt2qDNqFm_4k-Q/exec";
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    let allOrders = []; // This will store our objects: {id, user, monthIndex, amount}
+    let allOrders = []; 
     let chartInstance = null;
 
-    // 1. Setup & Load
     async function init() {
         // Populate Month Dropdown
         const mSelect = document.getElementById('month');
         months.forEach((m, i) => mSelect.innerHTML += `<option value="${i}">${m}</option>`);
         mSelect.value = new Date().getMonth();
 
-        // User Prompt
+        // One-time Name Prompt
         if (!localStorage.getItem('trackerUser')) {
             let name = prompt("Who is using this?", "Arshad");
             localStorage.setItem('trackerUser', name || "Arshad");
         }
         document.getElementById('user').value = localStorage.getItem('trackerUser');
 
-        // Fetch from Cloud
+        // Initial Load
         try {
             const resp = await fetch(G_URL);
             const data = await resp.json();
             if (Array.isArray(data)) allOrders = data;
             document.getElementById('syncStatus').innerText = "✓ Synced with Cloud";
-            updateUI();
         } catch (e) {
-            document.getElementById('syncStatus').innerText = "Working Locally (Offline)";
-            updateUI();
+            document.getElementById('syncStatus').innerText = "Offline Mode";
         }
+        updateUI();
     }
 
-    // 2. Save Order
     document.getElementById('salesForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('editId').value;
+        const editId = document.getElementById('editId').value;
         const user = document.getElementById('user').value;
         const month = parseInt(document.getElementById('month').value);
         const amount = parseFloat(document.getElementById('amount').value);
 
-        if (id) {
-            // Edit existing
-            const index = allOrders.findIndex(o => o.id == id);
-            allOrders[index] = { id: parseInt(id), user, month, amount };
+        if (editId) {
+            // Edit existing (Global Unique ID)
+            const index = allOrders.findIndex(o => o.globalId == editId);
+            allOrders[index].user = user;
+            allOrders[index].month = month;
+            allOrders[index].amount = amount;
         } else {
-            // Add new
-            const newId = allOrders.length > 0 ? Math.max(...allOrders.map(o => o.id)) + 1 : 1;
-            allOrders.push({ id: newId, user, month, amount });
+            // New Order: Calculate personal order number
+            const userOrders = allOrders.filter(o => o.user === user);
+            const personalOrderNum = userOrders.length + 1;
+            const globalId = Date.now(); // Unique timestamp ID for backend
+
+            allOrders.push({ globalId, user, personalOrderNum, month, amount });
         }
 
         resetForm();
@@ -126,31 +141,34 @@
         await syncToCloud();
     });
 
-    // 3. Sync to Google
     async function syncToCloud() {
-        document.getElementById('syncStatus').innerText = "Saving to Cloud...";
+        document.getElementById('syncStatus').innerText = "Saving...";
         try {
             await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) });
-            document.getElementById('syncStatus').innerText = "✓ Saved Successfully";
+            document.getElementById('syncStatus').innerText = "✓ Cloud Sync Complete";
         } catch (e) { console.error(e); }
     }
 
-    // 4. Edit/Delete Logic
-    function editOrder(id) {
-        const order = allOrders.find(o => o.id == id);
-        document.getElementById('editId').value = order.id;
+    function editOrder(gid) {
+        const order = allOrders.find(o => o.globalId == gid);
+        document.getElementById('editId').value = order.globalId;
         document.getElementById('user').value = order.user;
         document.getElementById('month').value = order.month;
         document.getElementById('amount').value = order.amount;
         
-        document.getElementById('formTitle').innerText = "Editing Order #" + id;
-        document.getElementById('saveBtn').innerText = "Update Order";
+        document.getElementById('formTitle').innerText = "Edit " + order.user + " Order #" + order.personalOrderNum;
+        document.getElementById('saveBtn').innerText = "Update Entry";
         document.getElementById('cancelBtn').style.display = "block";
     }
 
-    async function deleteOrder(id) {
-        if(confirm("Delete Order #" + id + "?")) {
-            allOrders = allOrders.filter(o => o.id != id);
+    async function deleteOrder(gid) {
+        if(confirm("Delete this order?")) {
+            allOrders = allOrders.filter(o => o.globalId != gid);
+            // Recalculate personal order numbers after deletion to keep them in sequence
+            ["Arshad", "Shahnwaz"].forEach(u => {
+                let count = 1;
+                allOrders.filter(o => o.user === u).forEach(o => o.personalOrderNum = count++);
+            });
             updateUI();
             await syncToCloud();
         }
@@ -159,28 +177,33 @@
     function resetForm() {
         document.getElementById('editId').value = "";
         document.getElementById('amount').value = "";
-        document.getElementById('formTitle').innerText = "Add New Order";
+        document.getElementById('formTitle').innerText = "Create Order";
         document.getElementById('saveBtn').innerText = "Save Order";
         document.getElementById('cancelBtn').style.display = "none";
     }
 
     document.getElementById('cancelBtn').onclick = resetForm;
 
-    // 5. UI Updates
     function updateUI() {
-        // Update Table (Newest first)
+        const filter = document.getElementById('viewFilter').value;
         const tbody = document.getElementById('orderListBody');
         tbody.innerHTML = '';
-        [...allOrders].reverse().forEach(o => {
+
+        // Sort: Newest orders at the top
+        const displayData = [...allOrders].reverse();
+
+        displayData.forEach(o => {
+            if (filter !== "All" && o.user !== filter) return;
+
             tbody.innerHTML += `
                 <tr>
-                    <td>Order ${o.id}</td>
+                    <td><strong>${o.user} Order #${o.personalOrderNum}</strong></td>
                     <td>${o.user}</td>
                     <td>${months[o.month]}</td>
                     <td>${o.amount.toLocaleString()}</td>
                     <td>
-                        <button class="btn-edit" onclick="editOrder(${o.id})">Edit</button>
-                        <button class="btn-del" onclick="deleteOrder(${o.id})">Delete</button>
+                        <button class="btn-edit" onclick="editOrder(${o.globalId})">Edit</button>
+                        <button class="btn-del" onclick="deleteOrder(${o.globalId})">Delete</button>
                     </td>
                 </tr>`;
         });
@@ -188,7 +211,6 @@
         // Update Chart
         const arshadTotals = Array(12).fill(0);
         const shahnwazTotals = Array(12).fill(0);
-        
         allOrders.forEach(o => {
             if(o.user === "Arshad") arshadTotals[o.month] += o.amount;
             else shahnwazTotals[o.month] += o.amount;
@@ -204,7 +226,8 @@
                     { label: 'Arshad', data: arshadTotals, backgroundColor: '#4f46e5' },
                     { label: 'Shahnwaz', data: shahnwazTotals, backgroundColor: '#10b981' }
                 ]
-            }
+            },
+            options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
