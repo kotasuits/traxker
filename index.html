@@ -6,104 +6,104 @@
     <title>Personal Sales Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #4f46e5; --secondary: #10b981; --bg: #f3f4f6; --card-bg: #ffffff; }
+        :root { --arshad-color: #4f46e5; --shahnwaz-color: #10b981; --bg: #f3f4f6; }
         html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', sans-serif; }
-        .container { max-width: 1100px; margin: 0 auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
 
-        /* Personal Stats Header */
-        .personal-header { 
+        /* User Specific Header */
+        .user-header { 
             display: grid; 
-            grid-template-columns: 1fr 1fr 200px; 
-            gap: 15px; 
-            background: var(--primary); 
-            padding: 20px; 
+            grid-template-columns: 1fr 1fr auto; 
+            gap: 20px; 
+            padding: 25px; 
             border-radius: 15px; 
             color: white;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.4s ease;
         }
-        .stat-group { display: flex; flex-direction: column; }
-        .stat-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
-        .stat-val { font-size: 28px; font-weight: 800; }
-        .user-badge { background: rgba(255,255,255,0.2); padding: 10px; border-radius: 10px; text-align: center; align-self: center; }
+        .stat-group { display: flex; flex-direction: column; justify-content: center; }
+        .stat-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: bold; letter-spacing: 1.5px; }
+        .stat-val { font-size: 34px; font-weight: 900; line-height: 1.2; }
+        .switch-btn { background: white; color: black; border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; font-size: 12px; }
 
-        .top-main { display: grid; grid-template-columns: 320px 1fr; gap: 15px; align-items: start; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e5e7eb; }
-        .chart-box { height: 220px; width: 100%; position: relative; }
+        .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
         
-        form { display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 12px; font-weight: 600; color: #4b5563; }
-        input, select, button { padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px; }
-        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 12px; font-weight: 700; color: #4b5563; }
+        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; }
+        .submit-btn { background: #1f2937; color: white; border: none; cursor: pointer; font-weight: bold; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { position: sticky; top: 0; background: #f8fafc; padding: 10px; border-bottom: 2px solid #e5e7eb; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+        .chart-container { height: 250px; position: relative; margin-top: 10px; }
         
-        .summary-table td { text-align: center; font-weight: 600; }
-        .summary-table th { background: #eee; font-size: 10px; text-align: center; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+        th { text-align: left; padding: 10px; border-bottom: 2px solid #eee; color: #6b7280; font-size: 11px; text-transform: uppercase; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f9fafb; }
+        
+        .history-scroll { max-height: 300px; overflow-y: auto; }
+        .status-tag { text-align: center; font-size: 10px; color: #9ca3af; font-weight: bold; }
+        
+        .btn-del { color: #ef4444; background: none; border: none; cursor: pointer; font-weight: bold; padding: 0 10px; }
 
-        .btn-edit { background: #fef3c7; color: #b45309; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        .btn-del { background: #fee2e2; color: #b91c1c; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; }
-        
-        @media (max-width: 850px) { .top-main, .personal-header { grid-template-columns: 1fr; } }
+        @media (max-width: 800px) { .main-grid, .user-header { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="personal-header" id="headerBg">
+    <div id="syncStatus" class="status-tag">CLOUD DATA LOADING...</div>
+
+    <div class="user-header" id="userTheme">
         <div class="stat-group">
-            <div class="stat-label" id="yearlyLabel">Your Yearly Sales</div>
-            <div id="personalYearly" class="stat-val">0</div>
+            <div class="stat-label">Yearly Revenue</div>
+            <div id="yearlyTotal" class="stat-val">0</div>
         </div>
         <div class="stat-group">
-            <div class="stat-label" id="monthlyLabel">This Month Revenue</div>
-            <div id="personalMonthly" class="stat-val">0</div>
+            <div class="stat-label">This Month (<span id="monthName"></span>)</div>
+            <div id="monthlyTotal" class="stat-val">0</div>
         </div>
-        <div class="user-badge">
-            <div style="font-size:10px; opacity:0.8">Logged in as</div>
-            <div id="displayUserName" style="font-weight:bold; font-size:18px;">---</div>
-            <button onclick="switchUser()" style="background:none; color:white; border:1px solid white; font-size:10px; margin-top:5px; padding:2px 5px; border-radius:4px;">Switch User</button>
+        <div class="stat-group" style="align-items: flex-end;">
+            <div style="font-size: 12px; font-weight: bold; margin-bottom: 5px;">Currently: <span id="userNameDisplay">---</span></div>
+            <button class="switch-btn" onclick="toggleUser()">Switch Account</button>
         </div>
     </div>
 
-    <div class="top-main">
+    <div class="main-grid">
         <div class="card">
-            <h3 id="formTitle" style="margin:0 0 10px 0; color:var(--primary);">New Entry</h3>
-            <form id="salesForm">
-                <input type="hidden" id="editId" value="">
-                <label>Salesperson</label>
-                <select id="user"><option value="Arshad">Arshad</option><option value="Shahnwaz">Shahnwaz</option></select>
+            <h3 style="margin:0 0 15px 0;">Add Sales Entry</h3>
+            <form id="entryForm">
                 <label>Month</label>
-                <select id="month"></select>
+                <select id="monthSelect"></select>
+                
                 <label>Amount</label>
-                <input type="number" id="amount" required placeholder="0.00">
-                <button type="submit" id="saveBtn">Save & Sync</button>
-                <button type="button" id="cancelBtn" style="background:#f3f4f6; color:#374151; display:none;">Cancel</button>
+                <input type="number" id="amountInput" required placeholder="Enter Value">
+                
+                <button type="submit" class="submit-btn" id="saveBtn">Save Record</button>
             </form>
         </div>
 
         <div class="card">
-            <div class="chart-box"><canvas id="salesChart"></canvas></div>
-            <div style="overflow-x: auto; margin-top: 10px;">
-                <table class="summary-table">
-                    <thead><tr id="summaryHeader"><th>User</th></tr></thead>
-                    <tbody id="summaryBody">
-                        <tr id="arshadRow"><td>Arshad</td></tr>
-                        <tr id="shahnwazRow"><td>Shahnwaz</td></tr>
-                    </tbody>
-                </table>
+            <h3 style="margin:0 0 5px 0;">Performance Breakdown</h3>
+            <div class="chart-container">
+                <canvas id="salesChart"></canvas>
             </div>
         </div>
-    </div>
 
-    <div class="card" style="flex-grow:1;">
-        <h3 style="margin:0 0 10px 0; font-size: 15px;">Recent Orders</h3>
-        <div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px;">
-            <table>
-                <thead><tr><th>ID</th><th>User</th><th>Month</th><th>Amount</th><th>Action</th></tr></thead>
-                <tbody id="orderListBody"></tbody>
-            </table>
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3 style="margin:0 0 10px 0;">Your Recent Orders</h3>
+            <div class="history-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order No.</th>
+                            <th>Month</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -111,130 +111,129 @@
 <script>
     const G_URL = "https://script.google.com/macros/s/AKfycbwHpKRlzGorZnAyY3fQ1IJvjQY1zn-OuAVrpteGtBmFUtJvlDflZQTAQt2qDNqFm_4k-Q/exec";
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    let allOrders = []; let chartInstance = null;
-    let currentUser = localStorage.getItem('trackerUser') || "Arshad";
+    let allOrders = [];
+    let chartObj = null;
+    let activeUser = localStorage.getItem('trackerUser') || "Arshad";
 
-    async function init() {
-        // Setup Selects
-        const mSelect = document.getElementById('month');
-        months.forEach((m, i) => mSelect.innerHTML += `<option value="${i}">${m}</option>`);
-        mSelect.value = new Date().getMonth();
-        const sHeader = document.getElementById('summaryHeader');
-        months.forEach(m => sHeader.innerHTML += `<th>${m}</th>`);
+    async function startApp() {
+        // Setup Month List
+        const mSel = document.getElementById('monthSelect');
+        months.forEach((m, i) => mSel.innerHTML += `<option value="${i}">${m}</option>`);
+        mSel.value = new Date().getMonth();
+        document.getElementById('monthName').innerText = months[new Date().getMonth()];
 
-        checkUser();
-        
+        refreshProfile();
+
+        // Load Cloud Data
         try {
-            const resp = await fetch(G_URL);
-            const data = await resp.json();
+            const response = await fetch(G_URL);
+            const data = await response.json();
             if (Array.isArray(data)) allOrders = data;
-        } catch (e) { console.log("Offline Mode"); }
-        updateUI();
-    }
-
-    function checkUser() {
-        document.getElementById('displayUserName').innerText = currentUser;
-        document.getElementById('user').value = currentUser;
-        // Change color based on user
-        const header = document.getElementById('headerBg');
-        if(currentUser === "Shahnwaz") header.style.background = "#10b981";
-        else header.style.background = "#4f46e5";
-    }
-
-    function switchUser() {
-        currentUser = currentUser === "Arshad" ? "Shahnwaz" : "Arshad";
-        localStorage.setItem('trackerUser', currentUser);
-        checkUser();
-        updateUI();
-    }
-
-    document.getElementById('salesForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const editId = document.getElementById('editId').value;
-        const user = document.getElementById('user').value;
-        const month = parseInt(document.getElementById('month').value);
-        const amount = parseFloat(document.getElementById('amount').value);
-
-        if (editId) {
-            const idx = allOrders.findIndex(o => o.globalId == editId);
-            allOrders[idx] = {...allOrders[idx], user, month, amount};
-        } else {
-            const pNum = allOrders.filter(o => o.user === user).length + 1;
-            allOrders.push({ globalId: Date.now(), user, personalOrderNum: pNum, month, amount });
+            document.getElementById('syncStatus').innerText = "✓ CLOUD SYNC ACTIVE";
+        } catch (e) {
+            document.getElementById('syncStatus').innerText = "OFFLINE MODE";
         }
-        resetForm(); updateUI(); await syncToCloud();
-    });
-
-    async function syncToCloud() {
-        try { await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) }); } catch (e) {}
+        renderDashboard();
     }
 
-    function updateUI() {
-        const arshadM = Array(12).fill(0); const shahnwazM = Array(12).fill(0);
-        const curMonth = new Date().getMonth();
-        
-        allOrders.forEach(o => {
-            if(o.user === "Arshad") arshadM[o.month] += o.amount;
-            else shahnwazM[o.month] += o.amount;
+    function refreshProfile() {
+        document.getElementById('userNameDisplay').innerText = activeUser;
+        const theme = document.getElementById('userTheme');
+        if (activeUser === "Arshad") {
+            theme.style.backgroundColor = "var(--arshad-color)";
+        } else {
+            theme.style.backgroundColor = "var(--shahnwaz-color)";
+        }
+    }
+
+    function toggleUser() {
+        activeUser = (activeUser === "Arshad") ? "Shahnwaz" : "Arshad";
+        localStorage.setItem('trackerUser', activeUser);
+        refreshProfile();
+        renderDashboard();
+    }
+
+    function renderDashboard() {
+        // Filter data for active user only
+        const myData = allOrders.filter(o => o.user === activeUser);
+        const monthlySums = Array(12).fill(0);
+        const currentMonthIdx = new Date().getMonth();
+
+        // Calculate Totals
+        let yearlyTotal = 0;
+        myData.forEach(o => {
+            monthlySums[o.month] += parseFloat(o.amount);
+            yearlyTotal += parseFloat(o.amount);
         });
 
-        // PERSONAL CALCULATIONS
-        const myYearly = (currentUser === "Arshad") ? arshadM.reduce((a,b)=>a+b,0) : shahnwazM.reduce((a,b)=>a+b,0);
-        const myMonthly = (currentUser === "Arshad") ? arshadM[curMonth] : shahnwazM[curMonth];
+        // Update Header Stats
+        document.getElementById('yearlyTotal').innerText = yearlyTotal.toLocaleString();
+        document.getElementById('monthlyTotal').innerText = monthlySums[currentMonthIdx].toLocaleString();
 
-        document.getElementById('personalYearly').innerText = myYearly.toLocaleString();
-        document.getElementById('personalMonthly').innerText = myMonthly.toLocaleString();
-        document.getElementById('yearlyLabel').innerText = currentUser + "'s Yearly Sales";
-        document.getElementById('monthlyLabel').innerText = months[curMonth] + " Revenue (" + currentUser + ")";
-
-        // Tables & Charts
-        document.getElementById('arshadRow').innerHTML = '<td>Arshad</td>' + arshadM.map(v => `<td>${v || '-'}</td>`).join('');
-        document.getElementById('shahnwazRow').innerHTML = '<td>Shahnwaz</td>' + shahnwazM.map(v => `<td>${v || '-'}</td>`).join('');
-
-        const tbody = document.getElementById('orderListBody');
+        // Update Table
+        const tbody = document.getElementById('historyBody');
         tbody.innerHTML = '';
-        [...allOrders].reverse().slice(0,10).forEach(o => {
-            tbody.innerHTML += `<tr><td>${o.user[0]}${o.personalOrderNum}</td><td>${o.user}</td><td>${months[o.month]}</td><td>${o.amount}</td><td><button class="btn-edit" onclick="editOrder(${o.globalId})">✎</button> <button class="btn-del" onclick="deleteOrder(${o.globalId})">✖</button></td></tr>`;
+        [...myData].reverse().forEach((o, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>Order #${myData.length - index}</td>
+                    <td>${months[o.month]}</td>
+                    <td>${parseFloat(o.amount).toLocaleString()}</td>
+                    <td><button class="btn-del" onclick="removeEntry(${o.globalId})">Delete</button></td>
+                </tr>`;
         });
 
+        // Update Chart
         const ctx = document.getElementById('salesChart').getContext('2d');
-        if (chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
+        if (chartObj) chartObj.destroy();
+        chartObj = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: months,
-                datasets: [{ label: 'Arshad', data: arshadM, backgroundColor: '#6366f1' }, { label: 'Shahnwaz', data: shahnwazM, backgroundColor: '#10b981' }]
+                datasets: [{
+                    label: activeUser + "'s Sales",
+                    data: monthlySums,
+                    backgroundColor: (activeUser === "Arshad") ? '#818cf8' : '#34d399',
+                    borderRadius: 5
+                }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    function editOrder(gid) {
-        const o = allOrders.find(o => o.globalId == gid);
-        document.getElementById('editId').value = o.globalId;
-        document.getElementById('user').value = o.user;
-        document.getElementById('month').value = o.month;
-        document.getElementById('amount').value = o.amount;
-        document.getElementById('formTitle').innerText = "Edit Entry";
-        document.getElementById('saveBtn').innerText = "Update";
-        document.getElementById('cancelBtn').style.display = "block";
-    }
+    document.getElementById('entryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const amt = document.getElementById('amountInput').value;
+        const month = document.getElementById('monthSelect').value;
+        
+        const newEntry = {
+            globalId: Date.now(),
+            user: activeUser,
+            month: parseInt(month),
+            amount: parseFloat(amt)
+        };
 
-    async function deleteOrder(gid) {
-        if(confirm("Delete Order?")) {
-            allOrders = allOrders.filter(o => o.globalId != gid);
-            updateUI(); await syncToCloud();
+        allOrders.push(newEntry);
+        document.getElementById('amountInput').value = '';
+        renderDashboard();
+        
+        // Sync
+        document.getElementById('syncStatus').innerText = "SAVING...";
+        try {
+            await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) });
+            document.getElementById('syncStatus').innerText = "✓ SAVED";
+        } catch (e) {}
+    });
+
+    async function removeEntry(gid) {
+        if (confirm("Delete this entry?")) {
+            allOrders = allOrders.filter(o => o.globalId !== gid);
+            renderDashboard();
+            await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) });
         }
     }
 
-    function resetForm() {
-        document.getElementById('editId').value = ""; document.getElementById('amount').value = "";
-        document.getElementById('formTitle').innerText = "New Entry";
-        document.getElementById('saveBtn').innerText = "Save & Sync";
-        document.getElementById('cancelBtn').style.display = "none";
-    }
-    document.getElementById('cancelBtn').onclick = resetForm;
-    init();
+    startApp();
 </script>
 </body>
 </html>
