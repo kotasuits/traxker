@@ -3,47 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sales Tracker | Arshad & Shahnwaz</title>
+    <title>Sales Tracker | Customer Focus</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --arshad-color: #4f46e5; --shahnwaz-color: #10b981; --bg: #f3f4f6; }
         html, body { height: 100%; margin: 0; padding: 0; background: var(--bg); font-family: 'Segoe UI', sans-serif; }
         
-        /* Login Overlay */
-        #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .login-card { background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .login-btn { padding: 15px 30px; margin: 10px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; font-size: 18px; width: 150px; }
+        #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .login-card { background: white; padding: 40px; border-radius: 20px; text-align: center; }
+        .login-btn { padding: 15px 30px; margin: 10px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; font-size: 18px; width: 160px; }
         
-        .container { max-width: 1000px; margin: 0 auto; padding: 15px; display: none; flex-direction: column; gap: 15px; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 15px; display: none; flex-direction: column; gap: 15px; }
 
-        /* Header */
         .user-header { display: grid; grid-template-columns: 1fr 1fr auto; gap: 20px; padding: 25px; border-radius: 15px; color: white; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .stat-val { font-size: 34px; font-weight: 900; }
         .stat-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: bold; }
-        .logout-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; }
+        .logout-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 15px; border-radius: 20px; cursor: pointer; }
 
-        .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; }
+        .main-grid { display: grid; grid-template-columns: 350px 1fr; gap: 15px; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e5e7eb; }
         
         form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 12px; font-weight: 700; color: #4b5563; }
         input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; }
-        .submit-btn { background: #1f2937; color: white; border: none; cursor: pointer; font-weight: bold; }
-        .cancel-btn { background: #f3f4f6; color: #374151; border: 1px solid #ccc; cursor: pointer; }
+        .submit-btn { background: #1f2937; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .cancel-btn { background: #f3f4f6; color: #374151; border: 1px solid #ccc; cursor: pointer; margin-top: 5px; }
         
-        .chart-container { height: 220px; position: relative; }
+        .chart-container { height: 250px; position: relative; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { text-align: left; padding: 10px; border-bottom: 2px solid #eee; color: #6b7280; }
+        th { text-align: left; padding: 12px 10px; border-bottom: 2px solid #eee; color: #6b7280; font-size: 11px; text-transform: uppercase; }
         td { padding: 12px 10px; border-bottom: 1px solid #f9fafb; }
         
-        .btn-edit { color: #f59e0b; background: none; border: none; cursor: pointer; font-weight: bold; margin-right: 10px; }
-        .btn-del { color: #ef4444; background: none; border: none; cursor: pointer; font-weight: bold; }
+        .btn-edit { color: #f59e0b; background: none; border: none; cursor: pointer; font-weight: bold; }
+        .btn-del { color: #ef4444; background: none; border: none; cursor: pointer; font-weight: bold; margin-left: 10px; }
+        
+        @media (max-width: 850px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
     <div class="login-card">
-        <h2 style="margin-bottom: 20px;">Login As:</h2>
+        <h2 style="margin-bottom: 25px;">Select Account:</h2>
         <button class="login-btn" style="background: var(--arshad-color);" onclick="login('Arshad')">Arshad</button>
         <button class="login-btn" style="background: var(--shahnwaz-color);" onclick="login('Shahnwaz')">Shahnwaz</button>
     </div>
@@ -52,30 +53,36 @@
 <div class="container" id="mainApp">
     <div class="user-header" id="userTheme">
         <div class="stat-group">
-            <div class="stat-label">Yearly Revenue</div>
+            <div class="stat-label">Yearly Total</div>
             <div id="yearlyTotal" class="stat-val">0</div>
         </div>
         <div class="stat-group">
-            <div class="stat-label">This Month Sales</div>
+            <div class="stat-label">This Month Revenue</div>
             <div id="monthlyTotal" class="stat-val">0</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-weight: bold; margin-bottom: 5px;">User: <span id="userNameDisplay">---</span></div>
+            <div style="font-weight: bold; margin-bottom: 5px;"><span id="userNameDisplay">---</span></div>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
     </div>
 
     <div class="main-grid">
         <div class="card">
-            <h3 id="formTitle">New Sales Entry</h3>
+            <h3 id="formTitle" style="margin-top:0">Log Sales Entry</h3>
             <form id="entryForm">
                 <input type="hidden" id="editId" value="">
-                <label>Month</label>
-                <select id="monthSelect"></select>
+                
+                <label>Customer Name</label>
+                <input type="text" id="customerInput" required placeholder="Ex: Rahul Sharma">
+
                 <label>Amount</label>
                 <input type="number" id="amountInput" required placeholder="0.00">
+
+                <label>Month</label>
+                <select id="monthSelect"></select>
+                
                 <button type="submit" class="submit-btn" id="saveBtn">Save Record</button>
-                <button type="button" class="cancel-btn" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel Edit</button>
+                <button type="button" class="cancel-btn" id="cancelBtn" style="display:none;" onclick="resetForm()">Cancel</button>
             </form>
         </div>
 
@@ -84,10 +91,17 @@
         </div>
 
         <div class="card" style="grid-column: 1 / -1;">
-            <h3>Your History</h3>
-            <div style="max-height: 250px; overflow-y: auto;">
+            <h3 style="margin-top:0">Order History</h3>
+            <div style="max-height: 350px; overflow-y: auto;">
                 <table>
-                    <thead><tr><th>Month</th><th>Amount</th><th>Actions</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Month</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
                     <tbody id="historyBody"></tbody>
                 </table>
             </div>
@@ -121,14 +135,14 @@
         months.forEach((m, i) => mSel.innerHTML += `<option value="${i}">${m}</option>`);
         mSel.value = new Date().getMonth();
 
-        document.getElementById('userNameDisplay').innerText = activeUser;
+        document.getElementById('userNameDisplay').innerText = activeUser + " Dashboard";
         document.getElementById('userTheme').style.backgroundColor = (activeUser === "Arshad") ? "var(--arshad-color)" : "var(--shahnwaz-color)";
 
         try {
             const resp = await fetch(G_URL);
             const data = await resp.json();
             if (Array.isArray(data)) allOrders = data;
-        } catch (e) { console.log("Offline"); }
+        } catch (e) { console.log("Offline Mode"); }
         render();
     }
 
@@ -149,11 +163,12 @@
         tbody.innerHTML = '';
         [...myData].reverse().forEach(o => {
             tbody.innerHTML += `<tr>
-                <td><b>${months[o.month]}</b></td>
+                <td><b>${o.customer || 'N/A'}</b></td>
                 <td>${parseFloat(o.amount).toLocaleString()}</td>
+                <td>${months[o.month]}</td>
                 <td>
-                    <button class="btn-edit" onclick="editEntry(${o.globalId})">✎ Edit</button>
-                    <button class="btn-del" onclick="deleteEntry(${o.globalId})">✖</button>
+                    <button class="btn-edit" onclick="editEntry(${o.globalId})">Edit</button>
+                    <button class="btn-del" onclick="deleteEntry(${o.globalId})">Del</button>
                 </td>
             </tr>`;
         });
@@ -164,7 +179,12 @@
             type: 'bar',
             data: {
                 labels: months,
-                datasets: [{ label: activeUser + "'s Sales", data: monthlySums, backgroundColor: (activeUser === 'Arshad' ? '#818cf8' : '#34d399') }]
+                datasets: [{ 
+                    label: 'Sales Revenue', 
+                    data: monthlySums, 
+                    backgroundColor: (activeUser === 'Arshad' ? '#818cf8' : '#34d399'),
+                    borderRadius: 6
+                }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
@@ -172,16 +192,24 @@
 
     document.getElementById('entryForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        const customer = document.getElementById('customerInput').value;
         const amt = document.getElementById('amountInput').value;
         const month = document.getElementById('monthSelect').value;
         const editId = document.getElementById('editId').value;
 
         if (editId) {
             const idx = allOrders.findIndex(o => o.globalId == editId);
+            allOrders[idx].customer = customer;
             allOrders[idx].amount = parseFloat(amt);
             allOrders[idx].month = parseInt(month);
         } else {
-            allOrders.push({ globalId: Date.now(), user: activeUser, month: parseInt(month), amount: parseFloat(amt) });
+            allOrders.push({ 
+                globalId: Date.now(), 
+                user: activeUser, 
+                customer: customer,
+                month: parseInt(month), 
+                amount: parseFloat(amt) 
+            });
         }
 
         resetForm();
@@ -192,23 +220,26 @@
     function editEntry(gid) {
         const o = allOrders.find(item => item.globalId == gid);
         document.getElementById('editId').value = o.globalId;
+        document.getElementById('customerInput').value = o.customer || '';
         document.getElementById('amountInput').value = o.amount;
         document.getElementById('monthSelect').value = o.month;
-        document.getElementById('formTitle').innerText = "Edit Entry";
-        document.getElementById('saveBtn').innerText = "Update Record";
+        document.getElementById('formTitle').innerText = "Update Entry";
+        document.getElementById('saveBtn').innerText = "Apply Changes";
         document.getElementById('cancelBtn').style.display = "block";
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function resetForm() {
         document.getElementById('editId').value = "";
+        document.getElementById('customerInput').value = "";
         document.getElementById('amountInput').value = "";
-        document.getElementById('formTitle').innerText = "New Sales Entry";
+        document.getElementById('formTitle').innerText = "Log Sales Entry";
         document.getElementById('saveBtn').innerText = "Save Record";
         document.getElementById('cancelBtn').style.display = "none";
     }
 
     async function deleteEntry(gid) {
-        if(confirm("Delete?")) {
+        if(confirm("Permanently delete this record?")) {
             allOrders = allOrders.filter(o => o.globalId != gid);
             render();
             await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) });
