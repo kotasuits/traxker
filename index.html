@@ -7,36 +7,53 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #4f46e5; --secondary: #10b981; --bg: #f3f4f6; --card-bg: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; margin: 0; height: 100vh; overflow-x: hidden; }
         .container { max-width: 1100px; margin: 0 auto; }
-        .grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .full-width { grid-column: 1 / -1; }
-        form { display: flex; flex-direction: column; gap: 10px; }
-        input, select, button { padding: 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
+        
+        /* Dashboard Layout - Fixed Grid */
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 15px; margin-bottom: 15px; }
+        
+        .card { background: var(--card-bg); padding: 15px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        /* Fix: Lock Chart Height */
+        .chart-container { height: 250px; position: relative; }
+        
+        /* Fix: Scrollable Table Area */
+        .table-container { 
+            max-height: 400px; 
+            overflow-y: auto; 
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        form { display: flex; flex-direction: column; gap: 8px; }
+        input, select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
         button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-edit { background: #f59e0b; padding: 5px 10px; font-size: 12px; border:none; color:white; border-radius:3px; cursor:pointer;}
-        .btn-del { background: #ef4444; padding: 5px 10px; font-size: 12px; border:none; color:white; border-radius:3px; cursor:pointer;}
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background: var(--primary); color: white; }
-        .filter-bar { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
-        .status { font-size: 0.85em; margin-bottom: 10px; font-weight: bold; text-align: center; color: #4b5563; }
+        
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { position: sticky; top: 0; background: var(--primary); color: white; z-index: 10; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; font-size: 13px; }
+
+        .btn-edit { background: #f59e0b; color:white; border:none; padding: 5px 8px; border-radius:3px; cursor:pointer; margin-right:2px;}
+        .btn-del { background: #ef4444; color:white; border:none; padding: 5px 8px; border-radius:3px; cursor:pointer;}
+        
+        .status { font-size: 0.8em; font-weight: bold; text-align: center; margin-bottom: 10px; }
+        
         @media (max-width: 850px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 style="text-align:center; color:var(--primary)">Personalized Sales Manager</h1>
-    <div id="syncStatus" class="status">Connecting to Cloud...</div>
+    <h2 style="text-align:center; color:var(--primary); margin: 10px 0;">Sales Manager</h2>
+    <div id="syncStatus" class="status">Connecting...</div>
 
     <div class="grid">
         <div class="card">
-            <h2 id="formTitle">Create Order</h2>
+            <h3 id="formTitle" style="margin-top:0">Create Order</h3>
             <form id="salesForm">
                 <input type="hidden" id="editId" value="">
-                <label>Select User:</label>
+                <label>User:</label>
                 <select id="user">
                     <option value="Arshad">Arshad</option>
                     <option value="Shahnwaz">Shahnwaz</option>
@@ -48,37 +65,42 @@
                 <label>Amount:</label>
                 <input type="number" id="amount" required placeholder="0.00">
                 
-                <button type="submit" id="saveBtn">Save Order</button>
-                <button type="button" id="cancelBtn" style="background:#6b7280; display:none; margin-top:5px;">Cancel Edit</button>
+                <button type="submit" id="saveBtn">Save & Sync</button>
+                <button type="button" id="cancelBtn" style="background:#6b7280; display:none;">Cancel</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Monthly Performance</h2>
-            <canvas id="salesChart" height="150"></canvas>
+            <h3 style="margin-top:0">Monthly Overview</h3>
+            <div class="chart-container">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
 
-        <div class="card full-width">
-            <div class="filter-bar">
-                <strong>View Orders For:</strong>
-                <select id="viewFilter" onchange="updateUI()">
+        <div class="card full-width" style="grid-column: 1 / -1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 style="margin:0">Recent Orders</h3>
+                <select id="viewFilter" onchange="updateUI()" style="padding:5px;">
                     <option value="All">All Users</option>
-                    <option value="Arshad">Arshad Only</option>
-                    <option value="Shahnwaz">Shahnwaz Only</option>
+                    <option value="Arshad">Arshad</option>
+                    <option value="Shahnwaz">Shahnwaz</option>
                 </select>
             </div>
-            <table id="orderTable">
-                <thead>
-                    <tr>
-                        <th>Order Number</th>
-                        <th>User</th>
-                        <th>Month</th>
-                        <th>Amount</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="orderListBody"></tbody>
-            </table>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>User</th>
+                            <th>Month</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderListBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -90,19 +112,16 @@
     let chartInstance = null;
 
     async function init() {
-        // Populate Month Dropdown
         const mSelect = document.getElementById('month');
         months.forEach((m, i) => mSelect.innerHTML += `<option value="${i}">${m}</option>`);
         mSelect.value = new Date().getMonth();
 
-        // One-time Name Prompt
         if (!localStorage.getItem('trackerUser')) {
             let name = prompt("Who is using this?", "Arshad");
             localStorage.setItem('trackerUser', name || "Arshad");
         }
         document.getElementById('user').value = localStorage.getItem('trackerUser');
 
-        // Initial Load
         try {
             const resp = await fetch(G_URL);
             const data = await resp.json();
@@ -122,18 +141,14 @@
         const amount = parseFloat(document.getElementById('amount').value);
 
         if (editId) {
-            // Edit existing (Global Unique ID)
             const index = allOrders.findIndex(o => o.globalId == editId);
             allOrders[index].user = user;
             allOrders[index].month = month;
             allOrders[index].amount = amount;
         } else {
-            // New Order: Calculate personal order number
             const userOrders = allOrders.filter(o => o.user === user);
             const personalOrderNum = userOrders.length + 1;
-            const globalId = Date.now(); // Unique timestamp ID for backend
-
-            allOrders.push({ globalId, user, personalOrderNum, month, amount });
+            allOrders.push({ globalId: Date.now(), user, personalOrderNum, month, amount });
         }
 
         resetForm();
@@ -145,7 +160,7 @@
         document.getElementById('syncStatus').innerText = "Saving...";
         try {
             await fetch(G_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(allOrders) });
-            document.getElementById('syncStatus').innerText = "✓ Cloud Sync Complete";
+            document.getElementById('syncStatus').innerText = "✓ Saved to Cloud";
         } catch (e) { console.error(e); }
     }
 
@@ -155,19 +170,18 @@
         document.getElementById('user').value = order.user;
         document.getElementById('month').value = order.month;
         document.getElementById('amount').value = order.amount;
-        
-        document.getElementById('formTitle').innerText = "Edit " + order.user + " Order #" + order.personalOrderNum;
-        document.getElementById('saveBtn').innerText = "Update Entry";
+        document.getElementById('formTitle').innerText = "Edit Order";
+        document.getElementById('saveBtn').innerText = "Update";
         document.getElementById('cancelBtn').style.display = "block";
+        window.scrollTo(0,0);
     }
 
     async function deleteOrder(gid) {
         if(confirm("Delete this order?")) {
             allOrders = allOrders.filter(o => o.globalId != gid);
-            // Recalculate personal order numbers after deletion to keep them in sequence
             ["Arshad", "Shahnwaz"].forEach(u => {
                 let count = 1;
-                allOrders.filter(o => o.user === u).forEach(o => o.personalOrderNum = count++);
+                allOrders.filter(o => o.user === u).sort((a,b)=>a.globalId - b.globalId).forEach(o => o.personalOrderNum = count++);
             });
             updateUI();
             await syncToCloud();
@@ -178,7 +192,7 @@
         document.getElementById('editId').value = "";
         document.getElementById('amount').value = "";
         document.getElementById('formTitle').innerText = "Create Order";
-        document.getElementById('saveBtn').innerText = "Save Order";
+        document.getElementById('saveBtn').innerText = "Save & Sync";
         document.getElementById('cancelBtn').style.display = "none";
     }
 
@@ -189,26 +203,22 @@
         const tbody = document.getElementById('orderListBody');
         tbody.innerHTML = '';
 
-        // Sort: Newest orders at the top
         const displayData = [...allOrders].reverse();
-
         displayData.forEach(o => {
             if (filter !== "All" && o.user !== filter) return;
-
             tbody.innerHTML += `
                 <tr>
-                    <td><strong>${o.user} Order #${o.personalOrderNum}</strong></td>
+                    <td>#${o.personalOrderNum}</td>
                     <td>${o.user}</td>
-                    <td>${months[o.month]}</td>
-                    <td>${o.amount.toLocaleString()}</td>
+                    <td>${months[o.month].substring(0,3)}</td>
+                    <td>${o.amount}</td>
                     <td>
-                        <button class="btn-edit" onclick="editOrder(${o.globalId})">Edit</button>
-                        <button class="btn-del" onclick="deleteOrder(${o.globalId})">Delete</button>
+                        <button class="btn-edit" onclick="editOrder(${o.globalId})">✎</button>
+                        <button class="btn-del" onclick="deleteOrder(${o.globalId})">✖</button>
                     </td>
                 </tr>`;
         });
 
-        // Update Chart
         const arshadTotals = Array(12).fill(0);
         const shahnwazTotals = Array(12).fill(0);
         allOrders.forEach(o => {
@@ -227,7 +237,11 @@
                     { label: 'Shahnwaz', data: shahnwazTotals, backgroundColor: '#10b981' }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
         });
     }
 
