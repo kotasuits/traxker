@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Tracker | Arshad & Shahnwaz</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text: #1f2937;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+            color: var(--primary);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select, input, button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #4338ca;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            text-align: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sales Dashboard</h1>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Add / Edit Sales</h2>
+            <form id="salesForm">
+                <label for="user">Salesperson:</label>
+                <select id="user" required>
+                    <option value="Arshad">Arshad</option>
+                    <option value="Shahnwaz">Shahnwaz</option>
+                </select>
+
+                <label for="month">Month:</label>
+                <select id="month" required>
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+
+                <label for="amount">Sales Amount (Rs/$):</label>
+                <input type="number" id="amount" placeholder="Enter amount..." required min="0">
+
+                <button type="submit">Save / Update Entry</button>
+            </form>
+            <p style="font-size: 0.85em; color: gray; margin-top: 10px;">* Entering a new amount for an existing month will edit/overwrite the previous data.</p>
+        </div>
+
+        <div class="card">
+            <h2>Annual Performance</h2>
+            <canvas id="salesChart"></canvas>
+        </div>
+
+        <div class="card full-width">
+            <h2>Jan to Dec Sales Data</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Arshad</th>
+                        <th>Shahnwaz</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Initialize or Load "Strong Memory" Data
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let salesData = JSON.parse(localStorage.getItem('trackerData'));
+
+    if (!salesData) {
+        // Default empty data if nothing is in local storage
+        salesData = {
+            Arshad: [0,0,0,0,0,0,0,0,0,0,0,0],
+            Shahnwaz: [0,0,0,0,0,0,0,0,0,0,0,0]
+        };
+    }
+
+    let chartInstance = null;
+
+    // 2. Handle Form Submission (Add/Edit)
+    document.getElementById('salesForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const user = document.getElementById('user').value;
+        const monthIndex = parseInt(document.getElementById('month').value);
+        const amount = parseFloat(document.getElementById('amount').value);
+
+        // Update the data array
+        salesData[user][monthIndex] = amount;
+
+        // Save to strong memory (localStorage)
+        localStorage.setItem('trackerData', JSON.stringify(salesData));
+
+        // Refresh UI
+        updateUI();
+        document.getElementById('amount').value = ''; // clear input
+    });
+
+    // 3. Render Dashboard Chart
+    function renderChart() {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        if (chartInstance) {
+            chartInstance.destroy(); // Destroy old chart before re-rendering
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Arshad',
+                        data: salesData.Arshad,
+                        backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Shahnwaz',
+                        data: salesData.Shahnwaz,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    // 4. Render Data Table
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = ''; // clear current
+
+        for (let i = 0; i < 12; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${months[i]}</strong></td>
+                <td>${salesData.Arshad[i]}</td>
+                <td>${salesData.Shahnwaz[i]}</td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+
+    // 5. Update UI Wrapper
+    function updateUI() {
+        renderChart();
+        renderTable();
+    }
+
+    // Initial load
+    updateUI();
+
+</script>
+</body>
+</html>
